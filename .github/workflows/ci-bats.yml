@@ -1,0 +1,42 @@
+name: BATS functional tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: "Build the application"
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: "Set up Go 1.17"
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.17
+      id: go
+
+    - name: "Clone CrowdSec"
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: "Install bats dependencies [1/2]"
+      run: sudo apt install daemonize netcat-openbsd
+
+    - name: "Install bats dependencies [2/2"
+      run: GO111MODULE=on go get github.com/mikefarah/yq/v4
+
+    - name: "BATS: build crowdsec"
+      run: make bats-clean bats-build
+
+    - name: "BATS: prepare fixture config+data"
+      run: make bats-instance-data
+
+    - name: "BATS: run tests"
+      run: make bats-test
+

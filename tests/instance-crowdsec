@@ -1,0 +1,78 @@
+#!/bin/sh
+
+set -eu
+
+die() {
+    echo >&2 "$@"
+    exit 1
+}
+
+about() {
+    die "usage: $0 [ start | stop ]"
+}
+
+#shellcheck disable=SC1007
+THIS_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+#shellcheck disable=SC1090
+. "${THIS_DIR}/.environment.sh"
+
+# you have not removed set -u above, have you?
+
+[ -z "${BIN_DIR-}" ] && die "\$BIN_DIR must be defined."
+[ -z "${LOG_DIR-}" ] && die "\$LOG_DIR must be defined."
+[ -z "${PID_DIR-}" ] && die "\$PID_DIR must be defined."
+
+if [ ! -e "${BIN_DIR}/crowdsec" ]; then
+    die "${BIN_DIR}/crowdsec is missing. Please run 'make bats-build' to create it."
+fi
+
+wait_for_port() {
+    # XXX does it work on centos, fedora, freebsd?
+    while ! nc -z localhost "$1"; do
+        sleep .05
+        # XXX should give up after a while
+    done
+}
+
+DAEMON_PID=${PID_DIR}/daemon.pid
+DAEMON_LOCK=${PID_DIR}/daemon.lock
+
+# start_instance_nowait() {
+#     stop_instance
+#     # XXX requires the daemonize package, or alternative (freebsd->/usr/sbin/daemon)
+#     daemonize -p "${DAEMON_PID}" -l "${DAEMON_LOCK}" -e "${LOG_DIR}/stderr" -o "${LOG_DIR}/stdout" "${BIN_DIR}/crowdsec"
+# }
+
+start_instance() {
+    # XXX requires the daemonize package, or alternative (freebsd->/usr/sbin/daemon)
+    daemonize -p "${DAEMON_PID}" -l "${DAEMON_LOCK}" -e "${LOG_DIR}/stderr" -o "${LOG_DIR}/stdout" "${BIN_DIR}/crowdsec"
+    wait_for_port 6060
+}
+
+stop_instance() {
+    if [ -f "${DAEMON_PID}" ]; then
+        # terminate with extreme prejudice, all the application data will be thrown away anyway
+        kill -9 "$(cat "${DAEMON_PID}")" && rm "${DAEMON_PID}" "${DAEMON_LOCK}"
+    fi
+}
+
+
+# ---------------------------
+
+[ $# -lt 1 ] && about
+
+case "$1" in
+    start)
+        start_instance
+        ;;
+    start-nowait)
+        start_instance_nowait
+        ;;
+    stop)
+        stop_instance
+        ;;
+    *)
+        about
+        ;;
+esac;
+
