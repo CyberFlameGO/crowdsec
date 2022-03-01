@@ -3,18 +3,17 @@
 
 set -u
 
-LIB="$(dirname "$BATS_TEST_FILENAME")/lib"
-load "${LIB}/bats-support/load.bash"
-load "${LIB}/bats-assert/load.bash"
+FILE="$(basename "${BATS_TEST_FILENAME}" .bats):"
+load "${TEST_DIR}/lib/bats-support/load.bash"
+load "${TEST_DIR}/lib/bats-assert/load.bash"
 
 declare stderr
 CSCLI="${BIN_DIR}/cscli"
 CROWDSEC="${BIN_DIR}/crowdsec"
 
 setup_file() {
-    echo "# --- $(basename "${BATS_TEST_FILENAME}" .bats)" >&3
-    #shellcheck source=tests/bats/lib/assert-crowdsec-not-running.sh
-    . "${LIB}/assert-crowdsec-not-running.sh"
+    #shellcheck source=../lib/assert-crowdsec-not-running.sh
+    . "${TEST_DIR}/lib/assert-crowdsec-not-running.sh"
 }
 
 setup() {
@@ -31,25 +30,25 @@ config_disable_agent() {
     yq 'del(.crowdsec_service)' -i "${CONFIG_DIR}/config.yaml"
 }
 
-@test "with agent: test without -no-cs flag" {
+@test "$FILE with agent: test without -no-cs flag" {
     run --separate-stderr timeout 1s "${CROWDSEC}"
     # from `man timeout`: If  the  command  times  out,  and --preserve-status is not set, then exit with status 124.
     assert_failure 124
 }
 
-@test "no agent: crowdsec LAPI should run (-no-cs flag)" {
+@test "$FILE no agent: crowdsec LAPI should run (-no-cs flag)" {
     run --separate-stderr timeout 1s "${CROWDSEC}" -no-cs
     assert_failure 124
 }
 
-@test "no agent: crowdsec LAPI should run (no crowdsec_service in configuration file)" {
+@test "$FILE no agent: crowdsec LAPI should run (no crowdsec_service in configuration file)" {
     config_disable_agent
     run --separate-stderr timeout 1s "${CROWDSEC}"
     [[ "$stderr" == *"crowdsec agent is disabled"* ]]
     assert_failure 124
 }
 
-@test "no agent: capi status should be ok" {
+@test "$FILE no agent: capi status should be ok" {
     config_disable_agent
     "${TEST_DIR}/instance-crowdsec" start
     run --separate-stderr "${CSCLI}" capi status
@@ -57,7 +56,7 @@ config_disable_agent() {
     assert_success
 }
 
-@test "no agent: cscli config show" {
+@test "$FILE no agent: cscli config show" {
     config_disable_agent
     run --separate-stderr "${CSCLI}" config show -o human
     assert_success
@@ -68,7 +67,7 @@ config_disable_agent() {
     refute_output --partial "Crowdsec:"
 }
 
-@test "no agent: cscli config backup" {
+@test "$FILE no agent: cscli config backup" {
     config_disable_agent
     tempdir=$(mktemp -u)
     run "${CSCLI}" config backup "${tempdir}"
@@ -81,7 +80,7 @@ config_disable_agent() {
     rm -rf -- "${tempdir:?}"
 }
 
-@test "no agent: lapi status should be ok" {
+@test "$FILE no agent: lapi status should be ok" {
     config_disable_agent
     "${TEST_DIR}/instance-crowdsec" start
     run --separate-stderr "${CSCLI}" lapi status
@@ -89,7 +88,7 @@ config_disable_agent() {
     assert_success
 }
 
-@test "cscli metrics" {
+@test "$FILE cscli metrics" {
     config_disable_agent
     "${TEST_DIR}/instance-crowdsec" start
     run --separate-stderr "${CSCLI}" metrics

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -e
+set -eu
 
 die() {
     echo >&2 "$@"
@@ -9,6 +9,9 @@ die() {
 
 # shellcheck disable=SC1007
 TEST_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck source=./.environment.sh
+. "${TEST_DIR}/.environment.sh"
+
 
 # XXX TODO freebsd has "daemon"
 if ! command -v daemonize >/dev/null; then
@@ -24,16 +27,18 @@ if ! command -v yq >/dev/null; then
     die "missing required program 'yq'. You can install it with 'GO111MODULE=on go get github.com/mikefarah/yq/v4'"
 fi
 
-# shellcheck source=./.environment.sh
-. "${TEST_DIR}/.environment.sh"
+totest="${TEST_DIR}/{bats,dyn-bats}"
 
-totest="${TEST_DIR}/bats"
-if [ -n "$1" ]; then
-    totest=$*
+if [ $# -ge 1 ]; then
+    "${TEST_DIR}/lib/bats-core/bin/bats" \
+        --jobs 1 \
+        --print-output-on-failure \
+        -T "$@"
+else
+    "${TEST_DIR}/lib/bats-core/bin/bats" \
+        --jobs 1 \
+        --print-output-on-failure \
+        -T "${TEST_DIR}/bats" "${TEST_DIR}/dyn-bats"
 fi
 
-"${TEST_DIR}/bats/lib/bats-core/bin/bats" \
-    --jobs 1 \
-    --print-output-on-failure \
-    -T "$totest"
 

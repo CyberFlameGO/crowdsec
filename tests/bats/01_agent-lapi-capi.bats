@@ -3,18 +3,16 @@
 
 set -u
 
-LIB="$(dirname "$BATS_TEST_FILENAME")/lib"
-load "${LIB}/bats-support/load.bash"
-load "${LIB}/bats-assert/load.bash"
+FILE="$(basename "${BATS_TEST_FILENAME}" .bats):"
+load "${TEST_DIR}/lib/bats-support/load.bash"
+load "${TEST_DIR}/lib/bats-assert/load.bash"
 
 declare stderr
 CSCLI="${BIN_DIR}/cscli"
 
-
 setup_file() {
-    echo "# --- $(basename "${BATS_TEST_FILENAME}" .bats)" >&3
-    #shellcheck source=tests/bats/lib/assert-crowdsec-not-running.sh
-    . "${LIB}/assert-crowdsec-not-running.sh"
+    #shellcheck source=../lib/assert-crowdsec-not-running.sh
+    . "${TEST_DIR}/lib/assert-crowdsec-not-running.sh"
 }
 
 setup() {
@@ -28,7 +26,7 @@ teardown() {
 
 #----------
 
-@test "cscli version" {
+@test "$FILE cscli version" {
     run "${CSCLI}" version
     assert_success
     assert_output --partial "version:"
@@ -42,7 +40,7 @@ teardown() {
     assert_output --partial "Constraint_acquis:"
 }
 
-#@test "cscli alerts list: at startup returns at least one entry: community pull" {
+#@test "$FILE cscli alerts list: at startup returns at least one entry: community pull" {
 #   skip "XXX TODO: community blocklist is not received because reasons"
 #   sleep 40
 #   run ${CSCLI} alerts list -o json
@@ -54,7 +52,7 @@ teardown() {
 #}
 
 
-@test "cscli capi status" {
+@test "$FILE cscli capi status" {
     run "${CSCLI}" capi status
     assert_success
     assert_output --partial "Loaded credentials from"
@@ -63,7 +61,7 @@ teardown() {
     assert_output --partial "You can successfully interact with Central API (CAPI)"
 }
 
-@test "cscli config show -o human" {
+@test "$FILE cscli config show -o human" {
     run "${CSCLI}" config show -o human
     assert_success
     assert_output --partial "Global:"
@@ -72,7 +70,7 @@ teardown() {
     assert_output --partial "Local API Server:"
 }
 
-@test "cscli config show -o json" {
+@test "$FILE cscli config show -o json" {
     run "${CSCLI}" config show -o json
     assert_success
     assert_output --partial '"API":'
@@ -86,7 +84,7 @@ teardown() {
     assert_output --partial '"Prometheus":'
 }
 
-@test "cscli config show -o raw" {
+@test "$FILE cscli config show -o raw" {
     run "${CSCLI}" config show -o raw
     assert_success
     assert_line "api:"
@@ -99,13 +97,13 @@ teardown() {
     assert_line "prometheus:"
 }
 
-@test "cscli config show --key" {
+@test "$FILE cscli config show --key" {
     run "${CSCLI}" config show --key Config.API.Server.ListenURI
     assert_success
     assert_output "127.0.0.1:8080"
 }
 
-@test "cscli config backup" {
+@test "$FILE cscli config backup" {
     tempdir=$(mktemp -u)
     run "${CSCLI}" config backup "${tempdir}"
     assert_success
@@ -117,7 +115,7 @@ teardown() {
     rm -rf -- "${tempdir:?}"
 }
 
-@test "cscli lapi status" {
+@test "$FILE cscli lapi status" {
     run --separate-stderr "${CSCLI}" lapi status
     assert_success
     [[ "$stderr" == *"Loaded credentials from"* ]]
@@ -126,7 +124,7 @@ teardown() {
     [[ "$stderr" == *"You can successfully interact with Local API (LAPI)"* ]]
 }
 
-@test "cscli metrics" {
+@test "$FILE cscli metrics" {
     sleep 1
     run --separate-stderr "${CSCLI}" metrics
     assert_success

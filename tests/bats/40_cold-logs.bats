@@ -3,9 +3,9 @@
 
 set -u
 
-LIB="$(dirname "$BATS_TEST_FILENAME")/lib"
-load "${LIB}/bats-support/load.bash"
-load "${LIB}/bats-assert/load.bash"
+FILE="$(basename "${BATS_TEST_FILENAME}" .bats):"
+load "${TEST_DIR}/lib/bats-support/load.bash"
+load "${TEST_DIR}/lib/bats-assert/load.bash"
 
 #declare stderr
 CSCLI="${BIN_DIR}/cscli"
@@ -18,9 +18,8 @@ fake_log() {
 }
 
 setup_file() {
-    echo "# --- $(basename "${BATS_TEST_FILENAME}" .bats)" >&3
-    #shellcheck source=tests/bats/lib/assert-crowdsec-not-running.sh
-    . "${LIB}/assert-crowdsec-not-running.sh"
+    #shellcheck source=../lib/assert-crowdsec-not-running.sh
+    . "${TEST_DIR}/lib/assert-crowdsec-not-running.sh"
     # we reset config and data, and only run the daemon once for all the tests in this file
     "${TEST_DIR}/instance-data" load
     "${TEST_DIR}/instance-crowdsec" start
@@ -28,10 +27,6 @@ setup_file() {
     # we could also keep it running for all the tests, but the
     # check in "assert-crowdsec-not-running.sh" is run AFTER setup_file
     "${TEST_DIR}/instance-crowdsec" stop
-}
-
-teardown_file() {
-    :
 }
 
 setup() {
@@ -44,37 +39,37 @@ teardown() {
 
 #----------
 
-@test "we have one decision" {
+@test "$FILE we have one decision" {
     run "${CSCLI}" decisions list -o json
     assert_success
     [[ $(echo "$output" | jq '. | length') -eq 1 ]]
 }
 
-@test "1.1.1.172 has been banned" {
+@test "$FILE 1.1.1.172 has been banned" {
     run "${CSCLI}" decisions list -o json
     assert_success
     [[ $(echo "$output" | jq -r '.[].decisions[0].value') = "1.1.1.172" ]]
 }
 
-@test "1.1.1.172 has been banned (range/contained: -r 1.1.1.0/24 --contained)" {
+@test "$FILE 1.1.1.172 has been banned (range/contained: -r 1.1.1.0/24 --contained)" {
     run "${CSCLI}" decisions list -r 1.1.1.0/24 --contained -o json
     assert_success
     [[ $(echo "$output" | jq -r '.[].decisions[0].value') = "1.1.1.172" ]]
 }
 
-@test "1.1.1.172 has not been banned (range/NOT-contained: -r 1.1.2.0/24)" {
+@test "$FILE 1.1.1.172 has not been banned (range/NOT-contained: -r 1.1.2.0/24)" {
     run "${CSCLI}" decisions list -r 1.1.2.0/24 -o json
     assert_success
     assert_output "null"
 }
 
-@test "1.1.1.172 has been banned (exact: -i 1.1.1.172)" {
+@test "$FILE 1.1.1.172 has been banned (exact: -i 1.1.1.172)" {
     run "${CSCLI}" decisions list -i 1.1.1.172 -o json
     assert_success
     [[ $(echo "$output" | jq -r '.[].decisions[0].value') = "1.1.1.172" ]]
 }
 
-@test "1.1.1.173 has not been banned (exact: -i 1.1.1.173)" {
+@test "$FILE 1.1.1.173 has not been banned (exact: -i 1.1.1.173)" {
     run "${CSCLI}" decisions list -i 1.1.1.173 -o json
     assert_success
     assert_output "null"

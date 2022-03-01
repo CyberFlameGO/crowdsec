@@ -3,26 +3,16 @@
 
 set -u
 
-LIB="$(dirname "$BATS_TEST_FILENAME")/lib"
-load "${LIB}/bats-support/load.bash"
-load "${LIB}/bats-assert/load.bash"
+FILE="$(basename "${BATS_TEST_FILENAME}" .bats):"
+load "${TEST_DIR}/lib/bats-support/load.bash"
+load "${TEST_DIR}/lib/bats-assert/load.bash"
 
 #declare stderr
 #CSCLI="${BIN_DIR}/cscli"
 
-
 setup_file() {
-    echo "# --- $(basename "${BATS_TEST_FILENAME}" .bats)" >&3
-    #shellcheck source=tests/bats/lib/assert-crowdsec-not-running.sh
-    . "${LIB}/assert-crowdsec-not-running.sh"
-}
-
-teardown_file() {
-    :
-}
-
-setup() {
-    :
+    #shellcheck source=../lib/assert-crowdsec-not-running.sh
+    . "${TEST_DIR}/lib/assert-crowdsec-not-running.sh"
 }
 
 #----------

@@ -3,20 +3,15 @@
 
 set -u
 
-LIB="$(dirname "$BATS_TEST_FILENAME")/lib"
-load "${LIB}/bats-support/load.bash"
-load "${LIB}/bats-assert/load.bash"
+FILE="$(basename "${BATS_TEST_FILENAME}" .bats):"
+load "${TEST_DIR}/lib/bats-support/load.bash"
+load "${TEST_DIR}/lib/bats-assert/load.bash"
 
 CSCLI="${BIN_DIR}/cscli"
 
 setup_file() {
-    echo "# --- $(basename "${BATS_TEST_FILENAME}" .bats)" >&3
-    #shellcheck source=tests/bats/lib/assert-crowdsec-not-running.sh
-    . "${LIB}/assert-crowdsec-not-running.sh"
-}
-
-teardown_file() {
-    :
+    #shellcheck source=../lib/assert-crowdsec-not-running.sh
+    . "${TEST_DIR}/lib/assert-crowdsec-not-running.sh"
 }
 
 setup() {
@@ -30,12 +25,12 @@ teardown() {
 
 #----------
 
-@test "can list machines as regular user" {
+@test "$FILE can list machines as regular user" {
     run --separate-stderr "${CSCLI}" machines list
     assert_success
 }
 
-@test "we have exactly one machine, localhost" {
+@test "$FILE we have exactly one machine, localhost" {
     run "${CSCLI}" machines list -o json
     assert_success
     [[ $(echo "$output" | jq '. | length') -eq 1 ]]
@@ -50,7 +45,7 @@ teardown() {
     [[ $(echo "$output" | jq -r '.[0].ipAddress') = "127.0.0.1" ]]
 }
 
-@test "add a new machine and delete it" {
+@test "$FILE add a new machine and delete it" {
     run "${CSCLI}" machines add -a -f /dev/null CiTestMachine -o human
     assert_success
     assert_output --partial "Machine 'CiTestMachine' successfully added to the local API"
@@ -74,7 +69,7 @@ teardown() {
     [[ $(echo "$output" | jq '. | length') -eq 1 ]]
 }
 
-@test "register, validate and then remove a machine" {
+@test "$FILE register, validate and then remove a machine" {
     run "${CSCLI}" lapi register --machine CiTestMachineRegister -f /dev/null -o human
     assert_success
     assert_output --partial "Successfully registered to Local API (LAPI)"

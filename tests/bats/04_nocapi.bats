@@ -3,19 +3,17 @@
 
 set -u
 
-LIB="$(dirname "$BATS_TEST_FILENAME")/lib"
-load "${LIB}/bats-support/load.bash"
-load "${LIB}/bats-assert/load.bash"
+FILE="$(basename "${BATS_TEST_FILENAME}" .bats):"
+load "${TEST_DIR}/lib/bats-support/load.bash"
+load "${TEST_DIR}/lib/bats-assert/load.bash"
 
 declare stderr
 CSCLI="${BIN_DIR}/cscli"
 CROWDSEC="${BIN_DIR}/crowdsec"
 
-
 setup_file() {
-    echo "# --- $(basename "${BATS_TEST_FILENAME}" .bats)" >&3
-    #shellcheck source=tests/bats/lib/assert-crowdsec-not-running.sh
-    . "${LIB}/assert-crowdsec-not-running.sh"
+    #shellcheck source=../lib/assert-crowdsec-not-running.sh
+    . "${TEST_DIR}/lib/assert-crowdsec-not-running.sh"
 }
 
 setup() {
@@ -32,7 +30,7 @@ config_disable_capi() {
     yq 'del(.api.server.online_client)' -i "${CONFIG_DIR}/config.yaml"
 }
 
-@test "without capi: crowdsec LAPI should still work" {
+@test "$FILE without capi: crowdsec LAPI should still work" {
     config_disable_capi
     run --separate-stderr timeout 1s "${CROWDSEC}"
     # from `man timeout`: If  the  command  times  out,  and --preserve-status is not set, then exit with status 124.
@@ -40,7 +38,7 @@ config_disable_capi() {
     assert_failure 124
 }
 
-@test "without capi: cscli capi status -> fail" {
+@test "$FILE without capi: cscli capi status -> fail" {
     config_disable_capi
     "${TEST_DIR}/instance-crowdsec" start
     run --separate-stderr "${CSCLI}" capi status
@@ -48,7 +46,7 @@ config_disable_capi() {
     assert_failure
 }
 
-@test "no capi: cscli config show" {
+@test "$FILE no capi: cscli config show" {
     config_disable_capi
     run --separate-stderr "${CSCLI}" config show -o human
     assert_success
@@ -58,7 +56,7 @@ config_disable_capi() {
     assert_output --partial "Local API Server:"
 }
 
-@test "no agent: cscli config backup" {
+@test "$FILE no agent: cscli config backup" {
     config_disable_capi
     tempdir=$(mktemp -u)
     run "${CSCLI}" config backup "${tempdir}"
@@ -71,7 +69,7 @@ config_disable_capi() {
     rm -rf -- "${tempdir:?}"
 }
 
-@test "without capi: cscli lapi status -> success" {
+@test "$FILE without capi: cscli lapi status -> success" {
     config_disable_capi
     "${TEST_DIR}/instance-crowdsec" start
     run --separate-stderr "${CSCLI}" lapi status
@@ -79,7 +77,7 @@ config_disable_capi() {
     [[ "$stderr" == *"You can successfully interact with Local API (LAPI)"* ]]
 }
 
-@test "cscli metrics" {
+@test "$FILE cscli metrics" {
     config_disable_capi
     "${TEST_DIR}/instance-crowdsec" start
     run --separate-stderr "${CSCLI}" metrics

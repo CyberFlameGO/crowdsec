@@ -3,19 +3,17 @@
 
 set -u
 
-LIB="$(dirname "$BATS_TEST_FILENAME")/lib"
-load "${LIB}/bats-support/load.bash"
-load "${LIB}/bats-assert/load.bash"
+FILE="$(basename "${BATS_TEST_FILENAME}" .bats):"
+load "${TEST_DIR}/lib/bats-support/load.bash"
+load "${TEST_DIR}/lib/bats-assert/load.bash"
 
 declare stderr
 CSCLI="${BIN_DIR}/cscli"
 CROWDSEC="${BIN_DIR}/crowdsec"
 
-
 setup_file() {
-    echo "# --- $(basename "${BATS_TEST_FILENAME}" .bats)" >&3
-    #shellcheck source=tests/bats/lib/assert-crowdsec-not-running.sh
-    . "${LIB}/assert-crowdsec-not-running.sh"
+    #shellcheck source=../lib/assert-crowdsec-not-running.sh
+    . "${TEST_DIR}/lib/assert-crowdsec-not-running.sh"
 }
 
 setup() {
@@ -30,32 +28,32 @@ teardown() {
 
 #----------
 
-@test "test without -no-api flag" {
+@test "$FILE test without -no-api flag" {
     run --separate-stderr timeout 1s "${CROWDSEC}"
     # from `man timeout`: If  the  command  times  out,  and --preserve-status is not set, then exit with status 124.
     assert_failure 124
 }
 
-@test "crowdsec should not run without LAPI (-no-api flag)" {
+@test "$FILE crowdsec should not run without LAPI (-no-api flag)" {
     run --separate-stderr timeout 1s "${CROWDSEC}" -no-api
     assert_failure 1
 }
 
-@test "crowdsec should not run without LAPI (no api.server in configuration file)" {
+@test "$FILE crowdsec should not run without LAPI (no api.server in configuration file)" {
     yq 'del(.api.server)' -i "${CONFIG_DIR}/config.yaml"
     run --separate-stderr timeout 1s "${CROWDSEC}"
     [[ "$stderr" == *"crowdsec local API is disabled"* ]]
     assert_failure 1
 }
 
-@test "capi status shouldn't be ok without api.server" {
+@test "$FILE capi status shouldn't be ok without api.server" {
     yq 'del(.api.server)' -i "${CONFIG_DIR}/config.yaml"
     run --separate-stderr "${CSCLI}" capi status
     [[ "$stderr" == *"Local API is disabled, please run this command on the local API machine"* ]]
     assert_failure 1
 }
 
-@test "cscli config show -o human" {
+@test "$FILE cscli config show -o human" {
     yq 'del(.api.server)' -i "${CONFIG_DIR}/config.yaml"
     run "${CSCLI}" config show -o human
     assert_success
@@ -65,7 +63,7 @@ teardown() {
     refute_output --partial "Local API Server:"
 }
 
-@test "cscli config backup" {
+@test "$FILE cscli config backup" {
     yq 'del(.api.server)' -i "${CONFIG_DIR}/config.yaml"
     tempdir=$(mktemp -u)
     run "${CSCLI}" config backup "${tempdir}"
@@ -78,7 +76,7 @@ teardown() {
     rm -rf -- "${tempdir:?}"
 }
 
-@test "lapi status shouldn't be ok without api.server" {
+@test "$FILE lapi status shouldn't be ok without api.server" {
     yq 'del(.api.server)' -i "${CONFIG_DIR}/config.yaml"
     run --separate-stderr "${CSCLI}" lapi status
     # XXX which message do we expect?
@@ -87,7 +85,7 @@ teardown() {
     assert_failure 1
 }
 
-@test "cscli metrics" {
+@test "$FILE cscli metrics" {
     skip
     yq 'del(.api.server)' -i "${CONFIG_DIR}/config.yaml"
     "${TEST_DIR}/instance-crowdsec" start
