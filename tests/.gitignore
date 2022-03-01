@@ -1,3 +1,4 @@
 /local/
 /local-init/
 /.environment.sh
+/bats/99_hubtests.bats

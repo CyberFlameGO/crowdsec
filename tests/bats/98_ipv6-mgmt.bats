@@ -103,7 +103,6 @@ docurl() {
     run "${CSCLI}" decisions list -i '1111:2222:3333:4444:5555:6666:7777:8887' -o json
     assert_success
     assert_output 'null'
-
 }
 
 @test "getting decisions for ip 1111:2222:3333:4444:5555:6666:7777:8887 / api" {
@@ -367,7 +366,7 @@ docurl() {
     assert_output 'bbbb:db8::/81'
 }
 
-@test "getting decisions for ip in bbbb:db8:0000:0000:0000:6fff:ffff:ffff / api" {
+@test "getting decisions for ip bbbb:db8:0000:0000:0000:6fff:ffff:ffff / api" {
     run docurl '/v1/decisions?ip=bbbb:db8:0000:0000:0000:6fff:ffff:ffff'
     assert_success
     run jq -r '.[].value' <(echo "$output")
@@ -381,7 +380,7 @@ docurl() {
     assert_output 'null'
 }
 
-@test "getting decisions for ip in bbbb:db8:0000:0000:0000:8fff:ffff:ffff / api" {
+@test "getting decisions for ip bbbb:db8:0000:0000:0000:8fff:ffff:ffff / api" {
     run docurl '/v1/decisions?ip=bbbb:db8:0000:0000:0000:8fff:ffff:ffff'
     assert_success
     assert_output 'null'

@@ -46,8 +46,11 @@ bats-instance-data: bats-environment
 bats-clean:
 	@$(RM) -r $(LOCAL_DIR) $(LOCAL_INIT_DIR)
 
+bats-generate-hubtests:
+	${TEST_DIR}/generate-hub-tests
+
 # Run the test suite.
-bats-test: bats-environment
+bats-test: bats-environment bats-generate-hubtests
 	$(TEST_DIR)/run-tests
 
 # Static checks for the test scripts.

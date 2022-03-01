@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -eu
+script_name=$0
 
 die() {
     echo >&2 "$@"
@@ -73,10 +74,9 @@ make_init_data() {
     remove_init_data
 }
 
-
 load_init_data() {
     if [ ! -f "${LOCAL_INIT_DIR}/init-config-data.tar" ]; then
-        die "Initial data not found; did you run make-init-data.sh ?"
+        die "Initial data not found; did you run '$script_name make' ?"
     fi
 
     remove_init_data
